@@ -1,14 +1,16 @@
 package main
 
 import (
+	"druk/pkg/ui"
 	"flag"
 	"fmt"
-
-	"druk/pkg/ui"
+	"time"
 )
 
 func main() {
 	endpoint := flag.String("endpoint", "", "API endpoint to test")
+	duration := flag.Duration("duration", 1*time.Second, "Duration of the load test")
+	concurrency := flag.Int("concurrency", 1, "Number of concurrent requests")
 	flag.Parse()
 
 	if *endpoint == "" {
@@ -16,7 +18,7 @@ func main() {
 		return
 	}
 
-	p := ui.NewProgram(*endpoint)
+	p := ui.NewProgram(*endpoint, *duration, *concurrency)
 	if _, err := p.Run(); err != nil {
 		fmt.Println("Error running program:", err)
 	}
