@@ -36,7 +36,7 @@ var (
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
 			Italic(true).
-			Foreground(lipgloss.Color("#FFC0CB")).
+			Foreground(lipgloss.Color("#17ffd1")).
 			PaddingTop(1).
 			PaddingBottom(1).
 			PaddingLeft(2).
@@ -55,6 +55,17 @@ var (
        ░       ░        ░     ░  ░   
      ░                               
     `
+	drukArt2 = `
+	▓█████▄x██▀███xxx█xxxx██xx██▄█▒
+    ▒██▀x██▌▓██x▒x██▒ ██xx▓██▒x██▄█▒
+    ░██xxx█▌▓██x░▄█x▒▓██xx▒██░▓███▄░
+    ░▓█▄xxx▌▒██▀▀█▄xx▓▓█xx░██░▓██x█▄
+    ░▒████▓x░██▓x▒██▒▒▒█████▓x▒██▒x█▄
+     ▒▒▓  ▒ ░ ▒▓ ░▒▓░░▒▓▒ ▒ ▒ ▒ ▒▒x▓▒
+     ░ ▒  ▒   ░▒ ░ ▒░░░▒░ ░ ░ ░ ░▒x▒░
+     ░ ░  ░   ░░   ░  ░░░ ░ ░ ░ ░░x░
+       ░       ░        ░     ░  ░
+	`
 )
 
 func formatDuration(d time.Duration) string {
@@ -131,6 +142,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ProgressBar.Width = msg.Width - 4
 		m.LatencyGraph.Width = msg.Width/2 - 4
 		m.ThroughputGraph.Width = msg.Width/2 - 4
+		cmd = tea.EnterAltScreen
 
 	case progress.FrameMsg:
 		progressModel, cmd := m.ProgressBar.Update(msg)
@@ -154,6 +166,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 func (m Model) View() string {
 	var sections []string
+	sections = append(sections, titleStyle.Render(drukArt))
 
 	// Progress Bar
 	durationProgress, err := safeDurationConversion(m.Progress)
