@@ -142,7 +142,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ProgressBar.Width = msg.Width - 4
 		m.LatencyGraph.Width = msg.Width/2 - 4
 		m.ThroughputGraph.Width = msg.Width/2 - 4
-		cmd = tea.EnterAltScreen
 
 	case progress.FrameMsg:
 		progressModel, cmd := m.ProgressBar.Update(msg)
@@ -243,7 +242,6 @@ func (m *Model) renderStatsSection() (string, error) {
 			m.Metrics.MaxOpenFiles,
 		)),
 	)
-
 	return statsSection, nil
 }
 

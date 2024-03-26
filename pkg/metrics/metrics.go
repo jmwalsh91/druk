@@ -41,34 +41,38 @@ func (m *Metrics) CalculateStatistics() {
 			return m.Latencies[i] < m.Latencies[j]
 		})
 
-		// Calculate Average Latency
 		var totalLatency time.Duration
 		for _, latency := range m.Latencies {
 			totalLatency += latency
 		}
 		m.AvgLatency = totalLatency / time.Duration(len(m.Latencies))
 
-		// Calculate Percentile Latencies
 		p90Index := int(float64(len(m.Latencies)) * 0.9)
 		p95Index := int(float64(len(m.Latencies)) * 0.95)
 		p99Index := int(float64(len(m.Latencies)) * 0.99)
+
 		m.LatencyP90 = m.Latencies[p90Index]
 		m.LatencyP95 = m.Latencies[p95Index]
 		m.LatencyP99 = m.Latencies[p99Index]
 
-		// Populate LatencyData for graphing
 		m.LatencyData = make([]float64, len(m.Latencies))
 		for i, latency := range m.Latencies {
 			m.LatencyData[i] = float64(latency) / float64(time.Millisecond)
 		}
 	}
 
-	// Calculate Error Rate
 	m.ErrorRate = (m.ErrorRate / float64(m.TotalRequests)) * 100
 
-	// Populate ThroughputData for graphing
 	m.ThroughputData = make([]float64, int(m.Duration.Seconds()))
 	for i := 0; i < len(m.ThroughputData); i++ {
-		m.ThroughputData[i] = m.Throughput
+		secondStartTime := time.Duration(i) * time.Second
+		secondEndTime := time.Duration(i+1) * time.Second
+		var requestsInSecond int
+		for _, latency := range m.Latencies {
+			if latency >= secondStartTime && latency < secondEndTime {
+				requestsInSecond++
+			}
+		}
+		m.ThroughputData[i] = float64(requestsInSecond)
 	}
 }

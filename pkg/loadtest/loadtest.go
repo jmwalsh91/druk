@@ -19,6 +19,7 @@ func Run(endpoint string, duration time.Duration, concurrency int, progressCh ch
 	var errorCount int64
 	statusCodes := make(map[int]int)
 	errors := make(map[string]int)
+	latencies := make([]time.Duration, 0) // Initialize an empty slice for individual latencies
 
 	log.Printf("Starting load test with endpoint: %s, duration: %s, concurrency: %d", endpoint, duration, concurrency)
 
@@ -35,7 +36,7 @@ func Run(endpoint string, duration time.Duration, concurrency int, progressCh ch
 				totalRequests++
 				totalLatency += latency
 				statusCodes[resp.StatusCode]++
-
+				latencies = append(latencies, latency) // Append individual latency to the slice
 				if err != nil {
 					errorCount++
 					errors[err.Error()]++
@@ -43,7 +44,6 @@ func Run(endpoint string, duration time.Duration, concurrency int, progressCh ch
 					errorCount++
 					errors[resp.Status]++
 				}
-
 				mu.Unlock()
 
 				if err == nil {
@@ -75,7 +75,7 @@ func Run(endpoint string, duration time.Duration, concurrency int, progressCh ch
 	result := metrics.Metrics{
 		Throughput:    float64(totalRequests) / duration.Seconds(),
 		ErrorRate:     float64(errorCount) / float64(totalRequests) * 100,
-		Latencies:     []time.Duration{totalLatency / time.Duration(totalRequests)},
+		Latencies:     latencies, // Assign the collected latencies slice
 		Duration:      duration,
 		StatusCodes:   statusCodes,
 		Errors:        errors,
