@@ -14,12 +14,13 @@ func Run(endpoint string, duration time.Duration, concurrency int, progressCh ch
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	start := time.Now()
+
 	var totalRequests int64
 	var totalLatency time.Duration
 	var errorCount int64
 	statusCodes := make(map[int]int)
 	errors := make(map[string]int)
-	latencies := make([]time.Duration, 0) // Initialize an empty slice for individual latencies
+	latencies := make([]time.Duration, 0)
 
 	log.Printf("Starting load test with endpoint: %s, duration: %s, concurrency: %d", endpoint, duration, concurrency)
 
@@ -36,7 +37,7 @@ func Run(endpoint string, duration time.Duration, concurrency int, progressCh ch
 				totalRequests++
 				totalLatency += latency
 				statusCodes[resp.StatusCode]++
-				latencies = append(latencies, latency) // Append individual latency to the slice
+				latencies = append(latencies, latency)
 				if err != nil {
 					errorCount++
 					errors[err.Error()]++
@@ -53,11 +54,10 @@ func Run(endpoint string, duration time.Duration, concurrency int, progressCh ch
 		}()
 	}
 
-	log.Printf("Load test completed. Total requests: %d, Total latency: %s, Error count: %d", totalRequests, totalLatency, errorCount)
-
 	go func() {
 		ticker := time.NewTicker(1 * time.Second)
 		defer ticker.Stop()
+
 		for {
 			select {
 			case <-ticker.C:
@@ -75,7 +75,7 @@ func Run(endpoint string, duration time.Duration, concurrency int, progressCh ch
 	result := metrics.Metrics{
 		Throughput:    float64(totalRequests) / duration.Seconds(),
 		ErrorRate:     float64(errorCount) / float64(totalRequests) * 100,
-		Latencies:     latencies, // Assign the collected latencies slice
+		Latencies:     latencies,
 		Duration:      duration,
 		StatusCodes:   statusCodes,
 		Errors:        errors,

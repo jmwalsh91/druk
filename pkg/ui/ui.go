@@ -96,6 +96,8 @@ type loadTestResultMsg struct {
 	err     error
 }
 
+type MetricsUpdateMsg metrics.Metrics
+
 func InitialModel(endpoint string, duration time.Duration, concurrency int) Model {
 	return Model{
 		Endpoint:    endpoint,
@@ -117,6 +119,7 @@ func InitialModel(endpoint string, duration time.Duration, concurrency int) Mode
 		},
 	}
 }
+
 func (m Model) Init() tea.Cmd {
 	return nil
 }
@@ -148,11 +151,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ProgressBar = progressModel.(progress.Model)
 		return m, cmd
 
-	case metrics.Metrics:
-		log.Printf("Received metrics: %+v", msg)
-		m.Metrics = msg
+	case MetricsUpdateMsg:
+		m.Metrics = metrics.Metrics(msg)
 		m.Metrics.CalculateStatistics()
 		m.updateLineCharts()
+		return m, nil
 
 	case loadTestResultMsg:
 		m.Metrics = msg.metrics
@@ -163,11 +166,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	return m, cmd
 }
+
 func (m Model) View() string {
 	var sections []string
 	sections = append(sections, titleStyle.Render(drukArt))
 
-	// Progress Bar
 	durationProgress, err := safeDurationConversion(m.Progress)
 	if err != nil {
 		log.Printf("Error converting progress duration: %v", err)
@@ -181,7 +184,6 @@ func (m Model) View() string {
 	}
 	sections = append(sections, progress)
 
-	// Stats for Last Second
 	statsSection, err := m.renderStatsSection()
 	if err != nil {
 		log.Printf("Error rendering stats section: %v", err)
@@ -189,7 +191,6 @@ func (m Model) View() string {
 		sections = append(sections, columnStyle.Render(statsSection))
 	}
 
-	// Status Code Distribution
 	statusCodeSection, err := m.renderStatusCodeSection()
 	if err != nil {
 		log.Printf("Error rendering status code section: %v", err)
@@ -197,7 +198,6 @@ func (m Model) View() string {
 		sections = append(sections, columnStyle.Render(statusCodeSection))
 	}
 
-	// Error Distribution
 	errorSection, err := m.renderErrorSection()
 	if err != nil {
 		log.Printf("Error rendering error section: %v", err)
@@ -205,7 +205,6 @@ func (m Model) View() string {
 		sections = append(sections, columnStyle.Render(errorSection))
 	}
 
-	// Line Charts
 	lineCharts, err := m.renderLineCharts()
 	if err != nil {
 		log.Printf("Error rendering line charts: %v", err)
@@ -222,6 +221,7 @@ func safeDurationConversion(f float64) (time.Duration, error) {
 	}
 	return time.Duration(f * float64(time.Second)), nil
 }
+
 func (m *Model) renderStatsSection() (string, error) {
 	if m.Metrics.LatencyData == nil || m.Metrics.LatencyP99 == 0 {
 		return "", fmt.Errorf("invalid metrics data")
@@ -297,7 +297,10 @@ func (m Model) runLoadTest() tea.Cmd {
 		}()
 
 		metrics, err := loadtest.Run(m.Endpoint, m.Duration, m.Concurrency, progressCh)
-		return loadTestResultMsg{metrics: metrics, err: err}
+		if err != nil {
+			return nil
+		}
+		return MetricsUpdateMsg(metrics)
 	}
 }
 
