@@ -375,7 +375,7 @@ func (c *LineChart) View() string {
 	lc.Title = c.Title
 	lc.Data = make([][]float64, 1)
 	lc.Data[0] = c.Data
-	lc.SetRect(0, 0, c.Width, c.Height)
+	lc.SetRect(5, 5, c.Width, c.Height)
 	lc.AxesColor = ui.ColorWhite
 	lc.LineColors[0] = ui.ColorGreen
 
