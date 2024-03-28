@@ -55,17 +55,6 @@ var (
        ░       ░        ░     ░  ░   
      ░                               
     `
-	drukArt2 = `
-	▓█████▄x██▀███xxx█xxxx██xx██▄█▒
-    ▒██▀x██▌▓██x▒x██▒ ██xx▓██▒x██▄█▒
-    ░██xxx█▌▓██x░▄█x▒▓██xx▒██░▓███▄░
-    ░▓█▄xxx▌▒██▀▀█▄xx▓▓█xx░██░▓██x█▄
-    ░▒████▓x░██▓x▒██▒▒▒█████▓x▒██▒x█▄
-     ▒▒▓  ▒ ░ ▒▓ ░▒▓░░▒▓▒ ▒ ▒ ▒ ▒▒x▓▒
-     ░ ▒  ▒   ░▒ ░ ▒░░░▒░ ░ ░ ░ ░▒x▒░
-     ░ ░  ░   ░░   ░  ░░░ ░ ░ ░ ░░x░
-       ░       ░        ░     ░  ░
-	`
 )
 
 func formatDuration(d time.Duration) string {
@@ -168,8 +157,31 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	logoSection := lipgloss.NewStyle().
+		Align(lipgloss.Left).
+		Render(drukArt)
+
+	metricsSection := lipgloss.NewStyle().
+		Align(lipgloss.Right).
+		Render(m.renderMetrics())
+
+	headerSection := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		logoSection,
+		metricsSection,
+	)
+
+	chartSection := m.renderLineCharts()
+
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		headerSection,
+		chartSection,
+	)
+}
+
+func (m Model) renderMetrics() string {
 	var sections []string
-	sections = append(sections, titleStyle.Render(drukArt))
 
 	durationProgress, err := safeDurationConversion(m.Progress)
 	if err != nil {
@@ -205,14 +217,7 @@ func (m Model) View() string {
 		sections = append(sections, columnStyle.Render(errorSection))
 	}
 
-	lineCharts, err := m.renderLineCharts()
-	if err != nil {
-		log.Printf("Error rendering line charts: %v", err)
-	} else {
-		sections = append(sections, lineCharts)
-	}
-
-	return lipgloss.JoinVertical(lipgloss.Top, sections...)
+	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }
 
 func safeDurationConversion(f float64) (time.Duration, error) {
@@ -222,7 +227,7 @@ func safeDurationConversion(f float64) (time.Duration, error) {
 	return time.Duration(f * float64(time.Second)), nil
 }
 
-func (m *Model) renderStatsSection() (string, error) {
+func (m Model) renderStatsSection() (string, error) {
 	if m.Metrics.LatencyData == nil || m.Metrics.LatencyP99 == 0 {
 		return "", fmt.Errorf("invalid metrics data")
 	}
@@ -245,7 +250,7 @@ func (m *Model) renderStatsSection() (string, error) {
 	return statsSection, nil
 }
 
-func (m *Model) renderStatusCodeSection() (string, error) {
+func (m Model) renderStatusCodeSection() (string, error) {
 	if m.Metrics.StatusCodes == nil {
 		return "", fmt.Errorf("status codes map is nil")
 	}
@@ -259,7 +264,7 @@ func (m *Model) renderStatusCodeSection() (string, error) {
 	return statusCodeSection, nil
 }
 
-func (m *Model) renderErrorSection() (string, error) {
+func (m Model) renderErrorSection() (string, error) {
 	if m.Metrics.Errors == nil {
 		return "", fmt.Errorf("errors map is nil")
 	}
@@ -273,17 +278,20 @@ func (m *Model) renderErrorSection() (string, error) {
 	return errorSection, nil
 }
 
-func (m *Model) renderLineCharts() (string, error) {
+func (m Model) renderLineCharts() string {
 	if m.LatencyGraph == nil || m.ThroughputGraph == nil {
-		return "", fmt.Errorf("line charts not initialized")
+		return "Line charts not initialized"
 	}
 
-	lineCharts := lipgloss.JoinHorizontal(lipgloss.Top,
+	lineCharts := lipgloss.JoinHorizontal(
+		lipgloss.Top,
 		m.LatencyGraph.View(),
 		m.ThroughputGraph.View(),
 	)
 
-	return lineCharts, nil
+	return lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		Render(lineCharts)
 }
 
 func (m Model) runLoadTest() tea.Cmd {
@@ -317,7 +325,7 @@ func (m *Model) updateLineCharts() {
 	m.ThroughputGraph.Data = m.Metrics.ThroughputData
 }
 
-func (m *Model) renderStatusCodes() string {
+func (m Model) renderStatusCodes() string {
 	log.Printf("Rendering status codes: %v", m.Metrics.StatusCodes)
 	if len(m.Metrics.StatusCodes) == 0 {
 		return "No status code data available"
@@ -330,7 +338,7 @@ func (m *Model) renderStatusCodes() string {
 	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }
 
-func (m *Model) renderErrors() string {
+func (m Model) renderErrors() string {
 	log.Printf("Rendering errors: %v", m.Metrics.Errors)
 	if len(m.Metrics.Errors) == 0 {
 		return "No error data available"
