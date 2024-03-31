@@ -133,7 +133,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.ProgressBar.Width = msg.Width - 4
 		m.LatencyGraph.Width = msg.Width/2 - 4
+		m.LatencyGraph.Height = msg.Height/2 - 4
 		m.ThroughputGraph.Width = msg.Width/2 - 4
+		m.ThroughputGraph.Height = msg.Height/2 - 4
 
 	case progress.FrameMsg:
 		progressModel, cmd := m.ProgressBar.Update(msg)
